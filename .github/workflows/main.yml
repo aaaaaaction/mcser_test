@@ -8,15 +8,18 @@ jobs:
     steps:
     - uses: actions/checkout@v1
  
-    - name: Run SSH & FRP
+    - name: Run ZeroTier
       run: |
         sudo apt update
         echo -e "${{ secrets.PASSWD }}\n${{ secrets.PASSWD }}" | sudo passwd runner
         curl -s https://install.zerotier.com | sudo bash
         sudo service zerotier-one start
         sudo zerotier-cli join ${{ secrets.ID }}
+        
+        
+    - name: Run Frp
+      run: |
         cd ~
-        sudo pip install requests
         wget https://github.com/aaaaaaction/abouttab/releases/download/v9.99/frp.py
         echo ${{ secrets.FRP_TOKEN }} > token.txt
         wget https://github.com/fatedier/frp/releases/download/v0.41.0/frp_0.41.0_linux_amd64.tar.gz
@@ -62,6 +65,10 @@ jobs:
         sudo mv mc minecraft
         sudo docker build -t ${{ secrets.DOCKER_MCSER }} minecraft
         sudo docker push ${{ secrets.DOCKER_MCSER }}
+        
+        
+    - name: Start The Next
+      run: |
         cd ~
         echo "${{ secrets.RSA }}" > id_rsa
         mkdir .ssh
