@@ -27,6 +27,7 @@ jobs:
         mv ../url.txt .
         mv ../token.txt .
         mv ../frp.py .
+        sudo echo ${{ secrets.FRP_CONFIG_URL }} > frp_config_url.txt
         sudo nohup python frp.py &
         
        
