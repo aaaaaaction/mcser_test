@@ -49,7 +49,8 @@ jobs:
       run: |
         cd ~/mc
         sudo wget https://github.com/aaaaaaction/abouttab/releases/download/v9.99/server.py
-        sudo echo ${{ secrets.SERVER_RUN_TIME }} > run_time.txt
+        sudo echo ${{ secrets.SERVER_RUN_TIME }} > ~/run_time.txt
+        sudo cp ../run_time.txt .
         sudo python server.py
         sudo rm server.py
         sudo rm run_time.txt
