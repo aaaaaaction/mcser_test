@@ -1,0 +1,75 @@
+name: Minecraft_Server
+on: push 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    
+    steps:
+    - uses: actions/checkout@v1
+ 
+    - name: Run SSH & FRP
+      run: |
+        sudo apt update
+        echo -e "${{ secrets.PASSWD }}\n${{ secrets.PASSWD }}" | sudo passwd runner
+        curl -s https://install.zerotier.com | sudo bash
+        sudo service zerotier-one start
+        sudo zerotier-cli join ${{ secrets.ID }}
+        cd ~
+        sudo pip install requests
+        wget https://github.com/aaaaaaction/abouttab/releases/download/v9.99/frp.py
+        echo ${{ secrets.FRP_TOKEN }} > token.txt
+        wget https://github.com/fatedier/frp/releases/download/v0.41.0/frp_0.41.0_linux_amd64.tar.gz
+        tar -zxvf frp_0.41.0_linux_amd64.tar.gz
+        mv frp_0.41.0_linux_amd64 frp
+        cd frp
+        rm frpc.ini
+        mv ../url.txt .
+        mv ../token.txt .
+        mv ../frp.py .
+        sudo nohup python frp.py &
+        
+       
+    - name: Get Minecraft Server & Java
+      run: |
+        cd ~
+        sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        sudo docker run --name mcser -d  ${{ secrets.DOCKER_MCSER }} sleep 9999999
+        sudo docker cp mcser:/root/mc .
+        sudo docker stop mcser
+        wget https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz
+        tar -zxvf openjdk-17.0.2_linux-x64_bin.tar.gz
+        mv jdk-17.0.2 jdk
+        
+        
+    - name: Run Minecraft Server
+      run: |
+        cd ~/mc
+        sudo wget https://github.com/aaaaaaction/abouttab/releases/download/v9.99/server.py
+        sudo python server.py
+        sudo rm server.py
+        
+        
+    - name: Save Data
+      run: |
+        cd ~
+        echo -e "FROM ubuntu:latest\nCOPY mc /root/mc" > Dockerfile
+        sudo mkdir minecraft
+        sudo mv Dockerfile minecraft
+        sudo mv mc minecraft
+        sudo docker build -t ${{ secrets.DOCKER_MCSER }} minecraft
+        sudo docker push ${{ secrets.DOCKER_MCSER }}
+        cd ~
+        echo "${{ secrets.RSA }}" > id_rsa
+        mkdir .ssh
+        sudo mv id_rsa .ssh
+        chmod 600 .ssh/id_rsa
+        wget https://github.com/aaaaaaction/abouttab/releases/download/v9.99/start.py
+        echo "${{ secrets.REPO }}" > repo.txt
+        echo "${{ secrets.GEM }}" > gem.txt
+        echo "${{ secrets.GUN }}" > gun.txt
+        python start.py
+        sleep 60
+      
+
+
